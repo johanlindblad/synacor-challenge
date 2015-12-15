@@ -1,12 +1,12 @@
 #include "vm.hpp"
 
-VM::VM()
+VM::VM() : program_counter(false), halted(false)
 {
 	std::fill_n(memory, 32768, 0);
 	std::fill_n(registers, 8, 0);
 };
 
-VM::VM(std::string binary_name)
+VM::VM(std::string binary_name) : program_counter(false), halted(false)
 {
 	std::ifstream f("challenge.bin", std::ios::in | std::ios::binary);
 	f.read((char*) memory, 32768 * sizeof(uint16_t));
@@ -159,6 +159,11 @@ bool VM::step()
 void VM::run()
 {
 	while(step() == true){}
+}
+
+bool VM::is_halted()
+{
+	return halted;
 }
 
 uint16_t VM::literal_value(uint16_t parameter)
