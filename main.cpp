@@ -57,9 +57,9 @@ int main()
 		uint16_t byte = memory[program_counter];
 
 		// Potentially unsafe
-		uint16_t a = memory[program_counter + 1];
-		uint16_t b = memory[program_counter + 2];
-		uint16_t c = memory[program_counter + 3];
+		uint16_t a = memory[(program_counter + 1) % 32768];
+		uint16_t b = memory[(program_counter + 2) % 32768];
+		uint16_t c = memory[(program_counter + 3) % 32768];
 
 		char character;
 
