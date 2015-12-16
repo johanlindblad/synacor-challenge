@@ -14,143 +14,149 @@ VM::VM(std::string binary_name) : program_counter(false), halted(false)
 	std::fill_n(registers, 8, 0);
 };
 
-bool VM::step()
+bool VM::step(bool continue_until_input)
 {
 	if(halted) return false;
 
-	uint16_t byte = memory[program_counter];
-
-	// Potentially unsafe but will only be used after safe reads
-	uint16_t a = memory[(program_counter + 1) % 32768];
-	uint16_t b = memory[(program_counter + 2) % 32768];
-	uint16_t c = memory[(program_counter + 3) % 32768];
-
-	char character;
-
-	switch(byte)
+	while(true)
 	{
-		case 0:
-			std::cout << "halt" << std::endl;
-			halted = true;
-			return true;
-			break;
-		case 1:
-			a -= 32768;
-			registers[a] = literal_value(b);
+		uint16_t byte = memory[program_counter];
 
-			program_counter += 3;
-			break;
-		case 2:
-			stack.push(literal_value(a));
+		// Potentially unsafe but will only be used after safe reads
+		uint16_t a = memory[(program_counter + 1) % 32768];
+		uint16_t b = memory[(program_counter + 2) % 32768];
+		uint16_t c = memory[(program_counter + 3) % 32768];
 
-			program_counter += 2;
-			break;
-		case 3:
-			if(stack.empty())
-			{
-				throw "Empty stack";
-			}
-			store_in(a, stack.top());
-			stack.pop();
+		char character;
 
-			program_counter += 2;
-			break;
-		case 4:
-			store_in(a, (literal_value(b) == literal_value(c)) ? 1 : 0);
+		switch(byte)
+		{
+			case 0:
+				std::cout << "halt" << std::endl;
+				halted = true;
+				return true;
+				break;
+			case 1:
+				a -= 32768;
+				registers[a] = literal_value(b);
 
-			program_counter += 4;
-			break;
-		case 5:
-			store_in(a, (literal_value(b) > literal_value(c)) ? 1 : 0);
+				program_counter += 3;
+				break;
+			case 2:
+				stack.push(literal_value(a));
 
-			program_counter += 4;
-			break;
-		case 6:
-			program_counter = a;
-			break;
-		case 7:
-			program_counter += 3;
+				program_counter += 2;
+				break;
+			case 3:
+				if(stack.empty())
+				{
+					throw "Empty stack";
+				}
+				store_in(a, stack.top());
+				stack.pop();
 
-			if(literal_value(a) > 0) program_counter = literal_value(b);
+				program_counter += 2;
+				break;
+			case 4:
+				store_in(a, (literal_value(b) == literal_value(c)) ? 1 : 0);
 
-			break;
-		case 8:
-			program_counter += 3;
+				program_counter += 4;
+				break;
+			case 5:
+				store_in(a, (literal_value(b) > literal_value(c)) ? 1 : 0);
 
-			if(literal_value(a) == 0) program_counter = literal_value(b);
+				program_counter += 4;
+				break;
+			case 6:
+				program_counter = a;
+				break;
+			case 7:
+				program_counter += 3;
 
-			break;
-		case 9:
-			store_in(a, (literal_value(b) + literal_value(c)) % 32768);
+				if(literal_value(a) > 0) program_counter = literal_value(b);
 
-			program_counter += 4;
-			break;
-		case 10:
-			store_in(a, (literal_value(b) * literal_value(c)) % 32768);
+				break;
+			case 8:
+				program_counter += 3;
 
-			program_counter += 4;
-			break;
-		case 11:
-			store_in(a, (literal_value(b) % literal_value(c)));
+				if(literal_value(a) == 0) program_counter = literal_value(b);
 
-			program_counter += 4;
-			break;
-		case 12:
-			store_in(a, literal_value(b) & literal_value(c));
+				break;
+			case 9:
+				store_in(a, (literal_value(b) + literal_value(c)) % 32768);
 
-			program_counter += 4;
-			break;
-		case 13:
-			store_in(a, literal_value(b) | literal_value(c));
+				program_counter += 4;
+				break;
+			case 10:
+				store_in(a, (literal_value(b) * literal_value(c)) % 32768);
 
-			program_counter += 4;
-			break;
-		case 14:
-			store_in(a, ~literal_value(b) & ~(1 << 15));
+				program_counter += 4;
+				break;
+			case 11:
+				store_in(a, (literal_value(b) % literal_value(c)));
 
-			program_counter += 3;
-			break;
-		case 15:
-		  b = memory[literal_value(b)];
-			store_in(a, b);
+				program_counter += 4;
+				break;
+			case 12:
+				store_in(a, literal_value(b) & literal_value(c));
 
-			program_counter += 3;
-			break;
-		case 16:
-			memory[literal_value(a)] = literal_value(b);
+				program_counter += 4;
+				break;
+			case 13:
+				store_in(a, literal_value(b) | literal_value(c));
 
-			program_counter += 3;
-			break;
-		case 17:
-			program_counter += 2;
+				program_counter += 4;
+				break;
+			case 14:
+				store_in(a, ~literal_value(b) & ~(1 << 15));
 
-			stack.push(program_counter);
-			program_counter = literal_value(a);
+				program_counter += 3;
+				break;
+			case 15:
+			  b = memory[literal_value(b)];
+				store_in(a, b);
 
-			break;
-		case 18:
-			program_counter = stack.top();
-			stack.pop();
-			break;
-		case 19:
-			std::cout << ((char) literal_value(a));
+				program_counter += 3;
+				break;
+			case 16:
+				memory[literal_value(a)] = literal_value(b);
 
-			program_counter += 2;
-			break;
-		case 20:
-			character = std::cin.get();
-			store_in(a, character);
+				program_counter += 3;
+				break;
+			case 17:
+				program_counter += 2;
 
-			program_counter += 2;
-			break;
-		case 21:
-			program_counter += 1;
-			break;
-		default:
-			std::cerr << "Unhandled instruction " << byte << std::endl;
-			halted = true;
-			return false;
-			break;
+				stack.push(program_counter);
+				program_counter = literal_value(a);
+
+				break;
+			case 18:
+				program_counter = stack.top();
+				stack.pop();
+				break;
+			case 19:
+				std::cout << ((char) literal_value(a));
+
+				program_counter += 2;
+				break;
+			case 20:
+				character = std::cin.get();
+				store_in(a, character);
+
+				program_counter += 2;
+				break;
+			case 21:
+				program_counter += 1;
+				break;
+			default:
+				std::cerr << "Unhandled instruction " << byte << std::endl;
+				halted = true;
+				return false;
+				break;
+		}
+
+		if(continue_until_input == false) break;
+		if(memory[program_counter] == 20) break;
 	}
 
 	return true;

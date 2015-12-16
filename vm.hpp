@@ -11,7 +11,8 @@ public:
 	VM(std::string binary_name);
 
 	// Returns false if halted
-	bool step();
+	bool step() {return step(false);};
+	bool step(bool continue_until_input);
 	bool is_halted();
 
 	// Runs until halted
