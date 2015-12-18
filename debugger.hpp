@@ -1,3 +1,4 @@
+#include <set>
 #include "vm.hpp"
 
 class Debugger
@@ -16,6 +17,7 @@ public:
 private:
 	VM vm;
 	bool step_mode;
+	std::set<uint16_t> breakpoints;
 
 	bool should_step();
 };
