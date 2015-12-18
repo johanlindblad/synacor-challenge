@@ -6,6 +6,7 @@
 
 class VM
 {
+	friend class Debugger;
 public:
 	VM();
 	VM(std::string binary_name);
@@ -14,9 +15,15 @@ public:
 	bool step() {return step(false);};
 	bool step(bool continue_until_input);
 	bool is_halted();
+	bool requests_input();
 
 	// Runs until halted
 	void run();
+
+protected:
+	uint16_t get_register(uint16_t register_number);
+	uint16_t get_memory(uint16_t memory_address);
+	uint16_t get_program_counter();
 
 private:
 	uint16_t memory[32768];

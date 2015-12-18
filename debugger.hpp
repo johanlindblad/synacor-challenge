@@ -18,5 +18,4 @@ private:
 	bool step_mode;
 
 	bool should_step();
-	void handle_command();
 };

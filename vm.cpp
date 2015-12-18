@@ -172,6 +172,36 @@ bool VM::is_halted()
 	return halted;
 }
 
+bool VM::requests_input()
+{
+	return memory[program_counter] == 20;
+}
+
+uint16_t VM::get_register(uint16_t register_number)
+{
+	if(register_number > 7)
+	{
+		throw "Invalid register number";
+	}
+
+	return registers[register_number];
+}
+
+uint16_t VM::get_memory(uint16_t memory_address)
+{
+	if(memory_address > 32768)
+	{
+		throw "Invalid memory address";
+	}
+
+	return memory[memory_address];
+}
+
+uint16_t VM::get_program_counter()
+{
+	return program_counter;
+}
+
 uint16_t VM::literal_value(uint16_t parameter)
 {
 	if(parameter >= 32768 && parameter <= 32775) return registers[parameter - 32768];
