@@ -32,7 +32,7 @@ bool VM::step(bool continue_until_input)
 		switch(byte)
 		{
 			case 0:
-				std::cout << "halt" << std::endl;
+				std::cout << "halt on " << program_counter << std::endl;
 				halted = true;
 				return true;
 				break;
@@ -141,6 +141,14 @@ bool VM::step(bool continue_until_input)
 				break;
 			case 20:
 				character = std::cin.get();
+
+				if(character == EOF)
+				{
+					std::cout << "halt on " << program_counter << std::endl;
+					halted = true;
+					return true;
+				}
+
 				store_in(a, character);
 
 				program_counter += 2;
