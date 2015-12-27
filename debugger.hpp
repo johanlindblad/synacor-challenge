@@ -1,4 +1,6 @@
 #include <set>
+#include <vector>
+#include <sstream>
 #include "vm.hpp"
 
 class Debugger
@@ -18,6 +20,9 @@ private:
 	VM vm;
 	bool step_mode;
 	std::set<uint16_t> breakpoints;
+	bool breadcrumbs_active;
+	std::vector<int> breadcrumbs;
+	std::stringstream& instream;
 
 	bool should_step();
 };

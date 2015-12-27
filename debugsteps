@@ -1,0 +1,10 @@
+inputf steps
+run
+use teleporter
+register 7 25734
+break 6027
+run
+register 0 6
+register 1 23519
+pc 6067
+run

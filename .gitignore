@@ -29,5 +29,7 @@
 debug
 main
 
+tools/teleport_verification/verifier
+
 # Debug symbols
 *.dSYM

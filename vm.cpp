@@ -1,6 +1,6 @@
 #include "vm.hpp"
 
-VM::VM() : program_counter(false), halted(false)
+VM::VM() : program_counter(false), halted(false), instream(&std::cin)
 {
 	std::fill_n(memory, 32768, 0);
 	std::fill_n(registers, 8, 0);
@@ -26,6 +26,11 @@ bool VM::step(bool continue_until_input)
 		uint16_t a = memory[(program_counter + 1) % 32768];
 		uint16_t b = memory[(program_counter + 2) % 32768];
 		uint16_t c = memory[(program_counter + 3) % 32768];
+
+		if(a == 32775 || b == 32775 || c == 32775)
+		{
+			//std::cout << std::to_string(get_program_counter()) << "!!!!!" << std::endl;
+		}
 
 		char character;
 
@@ -140,14 +145,14 @@ bool VM::step(bool continue_until_input)
 				program_counter += 2;
 				break;
 			case 20:
-				character = std::cin.get();
-
-				if(character == EOF)
+				if(instream->peek() == EOF)
 				{
 					std::cout << "halt on " << program_counter << std::endl;
 					halted = true;
 					return true;
 				}
+
+				character = instream->get();
 
 				store_in(a, character);
 
@@ -170,10 +175,94 @@ bool VM::step(bool continue_until_input)
 	return true;
 }
 
+std::string VM::describe_literal(uint16_t literal)
+{
+	if(literal >= 32768)
+	{
+		uint16_t register_number = literal - 32768;
+		return "r" + std::to_string(register_number) + " (current value " + std::to_string(registers[register_number]) + ")";
+	}
+	return std::to_string(literal);
+}
+
+std::string VM::describe_instruction()
+{
+	return describe_instruction(this->program_counter);
+}
+
+std::string VM::describe_instruction(uint16_t program_counter)
+{
+	uint16_t byte = memory[program_counter];
+
+	// Potentially unsafe but will only be used after safe reads
+	uint16_t a = memory[(program_counter + 1) % 32768];
+	uint16_t b = memory[(program_counter + 2) % 32768];
+	uint16_t c = memory[(program_counter + 3) % 32768];
+
+	switch(byte)
+	{
+		case 0:
+			return "halt";
+		case 1:
+			return "set " + describe_literal(a) + " to " + describe_literal(b);
+		case 2:
+			return "push " + describe_literal(a) + " to the stack";
+		case 3:
+			return "pop to " + describe_literal(a);
+		case 4:
+			return "" + describe_literal(a) + " = " + describe_literal(b) + " == " + describe_literal(c);
+		case 5:
+			return "gt " + describe_literal(a) + " = " + describe_literal(b) + " > " + describe_literal(c);
+		case 6:
+			return "jump to " + describe_literal(a);
+		case 7:
+			return "jump if " + describe_literal(a) + ", to " + describe_literal(b);
+			break;
+		case 8:
+			return "jump if !" + describe_literal(a) + ", to " + describe_literal(b);
+		case 9:
+			return "add into " + describe_literal(a) + ", " + describe_literal(b) + " + " + describe_literal(c);
+		case 10:
+			return "mult into " + describe_literal(a) + ", " + describe_literal(b) + " * " + describe_literal(c);
+		case 11:
+			return "mod into " + describe_literal(a) + ", " + describe_literal(b) + " mod " + describe_literal(c);
+		case 12:
+			return "and into " + describe_literal(a) + ", " + describe_literal(b) + " AND " + describe_literal(c);
+		case 13:
+			return "or into" + describe_literal(a) + ", " + describe_literal(b) + " OR " + describe_literal(c);
+		case 14:
+			return "not, " + describe_literal(a) + " = NOT " + describe_literal(b);
+		case 15:
+			return "rmem into " + describe_literal(a) + " from address at " + describe_literal(b);
+		case 16:
+			return "wmem into address at " + describe_literal(a) + " the value from " + describe_literal(b);
+		case 17:
+			return "call, write next instruction to stack and jump to " + describe_literal(a);
+		case 18:
+			return "ret, pop from stack and jump there";
+		case 19:
+			return "out " + describe_literal(a);
+		case 20:
+			return "in " + describe_literal(a);
+		case 21:
+			return "noop";
+		default:
+			break;
+	}
+
+	return "";
+}
+
 void VM::run()
 {
 	while(step() == true){}
 }
+
+void VM::set_input_stream(std::istream* new_stream)
+{
+	this->instream = new_stream;
+}
+
 
 bool VM::is_halted()
 {
@@ -195,6 +284,16 @@ uint16_t VM::get_register(uint16_t register_number)
 	return registers[register_number];
 }
 
+void VM::set_register(uint16_t register_number, uint16_t value)
+{
+	if(register_number > 7)
+	{
+		throw "Invalid register number";
+	}
+
+	registers[register_number] = value;
+}
+
 uint16_t VM::get_memory(uint16_t memory_address)
 {
 	if(memory_address > 32768)
@@ -208,6 +307,26 @@ uint16_t VM::get_memory(uint16_t memory_address)
 uint16_t VM::get_program_counter()
 {
 	return program_counter;
+}
+
+void VM::set_program_counter(uint16_t pc)
+{
+	program_counter = pc;
+}
+
+
+std::vector<uint16_t> VM::get_stack()
+{
+	std::stack<uint16_t> copy = this->stack;
+	std::vector<uint16_t> values;
+
+	while(! copy.empty())
+	{
+		values.push_back(copy.top());
+		copy.pop();
+	}
+
+	return values;
 }
 
 uint16_t VM::literal_value(uint16_t parameter)
